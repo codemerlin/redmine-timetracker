@@ -8,3 +8,5 @@ settings.py
  
 ;;directories to ignore
 .idea/
+build/
+dist/

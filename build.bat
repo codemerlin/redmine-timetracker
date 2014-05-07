@@ -1,0 +1,1 @@
+pyinstaller .\First.spec --onefile --noconfirm --nowindow --clean --icon=.\appicon.ico
