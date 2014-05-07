@@ -1,3 +1,3 @@
-' pyinstaller --onefile --noconfirm  --windowed --strip --clean --icon=.\appicon.ico .\First.spec 
+' pyinstaller --onefile --noconfirm  --windowed --clean --version-file=file_version_info.txt .\First.py
 
-pyinstaller --onefile --noconfirm  --windowed --clean .\First.spec
+pyinstaller .\First.spec

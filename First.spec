@@ -12,8 +12,8 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           name='RmHelpMeTrack.exe',
-		  icon='appicon.ico',
+          icon='appicon.ico',
           debug=False,
           strip=None,
           upx=True,
-          console=False )
+          console=False , version='file_version_info.txt')
