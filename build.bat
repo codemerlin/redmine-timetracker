@@ -1,1 +1,3 @@
-pyinstaller .\First.spec --onefile --noconfirm --nowindow --clean --icon=.\appicon.ico
+' pyinstaller --onefile --noconfirm  --windowed --strip --clean --icon=.\appicon.ico .\First.spec 
+
+pyinstaller --onefile --noconfirm  --windowed --clean .\First.spec
