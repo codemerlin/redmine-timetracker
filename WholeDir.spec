@@ -4,11 +4,13 @@ a = Analysis(['.\\First.py'],
              hiddenimports=[],
              hookspath=None,
              runtime_hooks=None)
+a.datas += [('appicon.ico','appicon.ico','DATA')]
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
           name='First.exe',
+          icon='appicon.ico',
           debug=False,
           strip=None,
           upx=True,

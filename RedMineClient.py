@@ -1,5 +1,6 @@
-import requests
 import json
+
+import requests
 
 
 class TimeEntryRequest(object):
@@ -8,8 +9,8 @@ class TimeEntryRequest(object):
 
 
 class TimeEntry(object):
-    def __init__(self, activity_id, issue_id, comments, hours):
-        self.hours = hours
+    def __init__(self, activity_id, issue_id, comments, time_in_minutes):
+        self.hours = time_in_minutes+"m"
         self.comments = comments
         self.issue_id = issue_id
         self.activity_id = activity_id
@@ -27,7 +28,7 @@ class RedMineClient:
 
     def get_issue(self, issueid):
         try:
-            issue = requests.get(self.server_url + self.issue_path.format(issueid), headers=self.headers).json()
+            issue = requests.get(self.server_url + self.issue_path.format(issueid), headers=self.headers, verify=False).json()
             return issue["issue"]
         except ValueError:
             issue = None
@@ -35,15 +36,16 @@ class RedMineClient:
 
     def get_activities(self):
         try:
-            activities = requests.get(self.server_url + self.activity_endpoint, headers=self.headers).json()
+            activities = requests.get(self.server_url + self.activity_endpoint, headers=self.headers, verify=False).json()
             return activities["time_entry_activities"]
         except ValueError:
             activities = None
         return activities
 
-    def post_time_entry(self, time_entry_request):
-        inputData=json.dumps(time_entry_request, default=lambda o: o.__dict__)
-        r = requests.post(self.server_url + self.time_entry_path, data=inputData, headers=self.headers)
+    def post_time_entry(self, time_entry):
+        time_entry_request = TimeEntryRequest(time_entry)
+        inputData = json.dumps(time_entry_request, default=lambda o: o.__dict__)
+        r = requests.post(self.server_url + self.time_entry_path, data=inputData, headers=self.headers, verify=False)
         return r.status_code == 201
 
 
