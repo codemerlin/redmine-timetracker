@@ -185,7 +185,9 @@ class Application(ttk.Frame):
 try:
     root = Tkinter.Tk()
     root.resizable(False, False)
-    root.wm_iconbitmap(resource_path('appicon.ico'))
+    # root.wm_iconbitmap(resource_path('appicon.ico'))
+    img = Tkinter.PhotoImage(file='redmine_fluid_icon.gif')
+    root.tk.call('wm', 'iconphoto', root._w, img)
     app = Application(master=root)
     root.mainloop()
 except Exception, e:
