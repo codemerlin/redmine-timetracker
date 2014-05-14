@@ -1,5 +1,6 @@
 import os
 import sys
+from time import strftime
 
 __author__ = 'Mohit_Thakral'
 
@@ -10,7 +11,9 @@ import ScrolledText
 import RedMineClient as rm
 import threading as threading
 # from ttk import
-import mbox
+import json
+import tkMessageBox
+
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -26,6 +29,19 @@ def resource_path(relative_path):
 class Application(ttk.Frame):
     def __init__(self, master=None):
         ttk.Frame.__init__(self, master)
+        settings = None
+        try:
+            with open('settings.json', 'r') as json_file:
+                settings = json.load(json_file)
+        except Exception:
+            self.settings_file_error()
+            raise
+        if settings is None:
+            self.settings_file_error()
+        # if settings['api_key'] == '' || settings['server_url'] == ''
+        self.log_timer_duration = 10000
+        self.redmine_client = rm.RedMineClient("https://support.targetintegration.com",
+                                               "c3a7f2f4562ed90ff5bc9b6d9e0574f4d434d54e")
         self.activity_thread = threading.Thread()
         self.activities = None
         self.time_in_minutes = Tkinter.StringVar()
@@ -42,18 +58,18 @@ class Application(ttk.Frame):
         self.box_comments = ScrolledText.ScrolledText(self.main_frame, width=47, height=8)
         self.btn_find_issue = ttk.Button(self.main_frame, text="Find", command=self.find_issue_click)
         self.entry_issue = ttk.Entry(self.main_frame, textvariable=self.issue_id)
-        self.redmine_client = rm.RedMineClient("https://support.targetintegration.com",
-                                               "c3a7f2f4562ed90ff5bc9b6d9e0574f4d434d54e")
         self.label_status = ttk.Label(self.main_frame)
 
         self.create_ui()
         self.get_activities()
 
+    def settings_file_error(self):
+        tkMessageBox.showerror("Error", "Error Reading Settings File, Make sure it exists with correct Values")
+
     def create_ui(self):
         constpadx = 10
         constpady = 5
         constSticky = (Tkinter.W,)
-        self.box = mbox.tbox(self)
         # standard_font = label_status['font']
         # new_font = tkFont.Font(font=standard_font)
         # new_font['weight'] = tkFont.BOLD
@@ -65,9 +81,11 @@ class Application(ttk.Frame):
                               padx=constpadx, pady=constpady)
         self.btn_find_issue.grid(column=1, row=1, columnspan=1, sticky=constSticky, padx=constpadx, pady=constpady)
 
-        ttk.Button(self.main_frame, text="Settings", command=lambda: self.box("Name ?")).grid(column=2, row=1, columnspan=1, sticky=constSticky,
-                                                          padx=constpadx,
-                                                          pady=constpady)
+        # ttk.Button(self.main_frame, text="Settings", command=lambda: self.box("Name ?")).grid(column=2, row=1,
+        #                                                                                       columnspan=1,
+        #                                                                                       sticky=constSticky,
+        #                                                                                       padx=constpadx,
+        #                                                                                       pady=constpady)
         ttk.Label(self.main_frame, textvariable=self.issue_subject, wraplength=370).grid(column=0, row=2, columnspan=3,
                                                                                          sticky=constSticky,
                                                                                          padx=constpadx,
@@ -80,34 +98,44 @@ class Application(ttk.Frame):
 
         ttk.Label(self.main_frame, text="Time In Minutes :").grid(column=0, row=4, columnspan=1, sticky=constSticky,
                                                                   padx=constpadx, pady=constpady)
-        ttk.Entry(self.main_frame, textvariable=self.time_in_minutes).grid(column=1, row=4, columnspan=2,
-                                                                           sticky=constSticky, padx=constpadx,
-                                                                           pady=constpady)
+        entry_time = ttk.Entry(self.main_frame, textvariable=self.time_in_minutes)
+        entry_time.grid(column=1, row=4, columnspan=2,
+                        sticky=constSticky, padx=constpadx,
+                        pady=constpady)
         ttk.Label(self.main_frame, text="Comments :").grid(column=0, row=5, columnspan=3, sticky=constSticky,
                                                            padx=constpadx,
                                                            pady=constpady)
         self.box_comments.grid(column=0, row=6, columnspan=3, sticky=constSticky, padx=constpadx, pady=constpady)
-        ttk.Button(self.main_frame, text="Save", command=self.save_time_entry_click).grid(column=2, row=7,
-                                                                                          sticky=constSticky,
-                                                                                          padx=constpadx,
-                                                                                          pady=constpady)
+        save_button = ttk.Button(self.main_frame, text="Save", command=self.save_time_entry_click)
+        save_button.grid(column=2, row=7,
+                         sticky=constSticky,
+                         padx=constpadx,
+                         pady=constpady)
+        tab_order = (
+            self.entry_issue, self.btn_find_issue, self.cmb_activity, entry_time, self.box_comments, save_button, )
+
+        for w in tab_order:
+            w.lift()
 
 
     def save_time_entry_click(self):
         if not self.validate_form():
             return
+        self.save_time_entry_server(self.time_in_minutes.get())
+
+    def save_time_entry_server(self, time_in_minute):
         selected_activity = self.cmb_activity.get()
         selected_activity_id = list(filter(lambda x: x["name"] == selected_activity, self.activities))[0]["id"]
         user_comments = self.box_comments.get('1.0', Tkinter.END)
         self.time_entry = rm.TimeEntry(activity_id=selected_activity_id, issue_id=int(self.issue_id.get()),
-                                       comments=user_comments, time_in_minutes=self.time_in_minutes.get())
+                                       comments=user_comments, time_in_minutes=time_in_minute.__str__())
 
         self.after(2, self.process_time_entry)
 
     def process_time_entry(self):
         status = self.redmine_client.post_time_entry(self.time_entry)
         if status:
-            self.set_success_msg("Time Entry Saved SuccessFully")
+            self.set_success_msg("Time Entry Saved Successfully " + strftime("%Y-%m-%d %H:%M:%S"))
 
 
     def find_issue_click(self):
@@ -157,7 +185,11 @@ class Application(ttk.Frame):
         self.issue_subject.set(self.issue["subject"])
         self.entry_issue.state(statespec=('disabled',))
         self.btn_find_issue['text'] = "Edit"
+        self.after(self.log_timer_duration, self.start_logging)
 
+    def start_logging(self):
+        self.save_time_entry_server(self.log_timer_duration / 10000)
+        self.after(self.log_timer_duration, self.start_logging)
 
     def get_activities(self):
         self.activity_thread.__init__(target=self.req_get_activity_process, args=())
@@ -186,7 +218,7 @@ try:
     root = Tkinter.Tk()
     root.resizable(False, False)
     # root.wm_iconbitmap(resource_path('appicon.ico'))
-    img = Tkinter.PhotoImage(file='redmine_fluid_icon.gif')
+    img = Tkinter.PhotoImage(file=resource_path('redmine_fluid_icon.gif'))
     root.tk.call('wm', 'iconphoto', root._w, img)
     app = Application(master=root)
     root.mainloop()
