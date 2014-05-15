@@ -2,6 +2,9 @@ import os
 import sys
 from time import strftime
 
+from SettingsDialog import SettingsDialog
+
+
 __author__ = 'Mohit_Thakral'
 
 import Tkinter as Tkinter
@@ -13,35 +16,42 @@ import threading as threading
 # from ttk import
 import json
 import tkMessageBox
-
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
+import re
 
 
 class Application(ttk.Frame):
-    def __init__(self, master=None):
-        ttk.Frame.__init__(self, master)
+    def read_settings(self):
         settings = None
         try:
-            with open('settings.json', 'r') as json_file:
+            with open(self.resource_path('settings.json'), 'r') as json_file:
                 settings = json.load(json_file)
         except Exception:
             self.settings_file_error()
             raise
         if settings is None:
             self.settings_file_error()
-        # if settings['api_key'] == '' || settings['server_url'] == ''
-        self.log_timer_duration = 10000
-        self.redmine_client = rm.RedMineClient("https://support.targetintegration.com",
-                                               "c3a7f2f4562ed90ff5bc9b6d9e0574f4d434d54e")
+            raise
+        if settings['api_key'] == '' or settings['server_url'] == '' or settings['time_in_minutes'] == '':
+            self.settings_file_error()
+            raise
+        if not self.is_valid_url(settings['server_url']):
+            self.settings_file_error()
+            raise
+        return settings
+
+    def __init__(self, master=None):
+        ttk.Frame.__init__(self, master)
+        self.const_pad_y = 5
+        self.const_pad_x = 10
+        self.const_sticky = (Tkinter.W,)
+        settings = self.read_settings()
+
+        self.log_timer_duration = settings['time_in_minutes'] * 10000
+        self.redmine_client = rm.RedMineClient(settings['server_url'],
+                                               settings['api_key'])
+
+        self.img = Tkinter.PhotoImage(file=self.resource_path('redmine_fluid_icon.gif'))
+        master.tk.call('wm', 'iconphoto', master._w, self.img)
         self.activity_thread = threading.Thread()
         self.activities = None
         self.time_in_minutes = Tkinter.StringVar()
@@ -63,54 +73,76 @@ class Application(ttk.Frame):
         self.create_ui()
         self.get_activities()
 
+    def resource_path(self, relative_path):
+        """ Get absolute path to resource, works for dev and for PyInstaller """
+        try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+
+        return os.path.join(base_path, relative_path)
+
+    def is_valid_url(self, url):
+        regex = re.compile(
+            r'^https?://'  # http:// or https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+            r'localhost|'  # localhost...
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+            r'(?::\d+)?'  # optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+        return url is not None and regex.search(url)
+
+
     def settings_file_error(self):
         tkMessageBox.showerror("Error", "Error Reading Settings File, Make sure it exists with correct Values")
 
     def create_ui(self):
-        constpadx = 10
-        constpady = 5
-        constSticky = (Tkinter.W,)
         # standard_font = label_status['font']
         # new_font = tkFont.Font(font=standard_font)
         # new_font['weight'] = tkFont.BOLD
         # label_status['font'] = new_font
         self.label_status.grid(column=0, row=0, columnspan=3,
-                               sticky=constSticky, padx=constpadx,
-                               pady=constpady)
-        self.entry_issue.grid(column=0, row=1, columnspan=1, sticky=constSticky,
-                              padx=constpadx, pady=constpady)
-        self.btn_find_issue.grid(column=1, row=1, columnspan=1, sticky=constSticky, padx=constpadx, pady=constpady)
+                               sticky=self.const_sticky, padx=self.const_pad_x,
+                               pady=self.const_pad_y)
+        self.entry_issue.grid(column=0, row=1, columnspan=1, sticky=self.const_sticky,
+                              padx=self.const_pad_x, pady=self.const_pad_y)
+        self.btn_find_issue.grid(column=1, row=1, columnspan=1, sticky=self.const_sticky, padx=self.const_pad_x,
+                                 pady=self.const_pad_y)
 
-        # ttk.Button(self.main_frame, text="Settings", command=lambda: self.box("Name ?")).grid(column=2, row=1,
-        #                                                                                       columnspan=1,
-        #                                                                                       sticky=constSticky,
-        #                                                                                       padx=constpadx,
-        #                                                                                       pady=constpady)
+        ttk.Button(self.main_frame, text="Settings", command=lambda: SettingsDialog(self)).grid(column=2, row=1,
+                                                                                                columnspan=1,
+                                                                                                sticky=self.const_sticky,
+                                                                                                padx=self.const_pad_x,
+                                                                                                pady=self.const_pad_y)
         ttk.Label(self.main_frame, textvariable=self.issue_subject, wraplength=370).grid(column=0, row=2, columnspan=3,
-                                                                                         sticky=constSticky,
-                                                                                         padx=constpadx,
-                                                                                         pady=constpady)
-        ttk.Label(self.main_frame, text="Activity :").grid(column=0, row=3, columnspan=1, sticky=constSticky,
-                                                           padx=constpadx,
-                                                           pady=constpady)
-        self.cmb_activity.grid(column=1, row=3, columnspan=2, sticky=constSticky, padx=constpadx, pady=constpady)
+                                                                                         sticky=self.const_sticky,
+                                                                                         padx=self.const_pad_x,
+                                                                                         pady=self.const_pad_y)
+        ttk.Label(self.main_frame, text="Activity :").grid(column=0, row=3, columnspan=1, sticky=self.const_sticky,
+                                                           padx=self.const_pad_x,
+                                                           pady=self.const_pad_y)
+        self.cmb_activity.grid(column=1, row=3, columnspan=2, sticky=self.const_sticky, padx=self.const_pad_x,
+                               pady=self.const_pad_y)
         self.cmb_activity.state(statespec=('readonly',))
 
-        ttk.Label(self.main_frame, text="Time In Minutes :").grid(column=0, row=4, columnspan=1, sticky=constSticky,
-                                                                  padx=constpadx, pady=constpady)
+        ttk.Label(self.main_frame, text="Time In Minutes :").grid(column=0, row=4, columnspan=1,
+                                                                  sticky=self.const_sticky,
+                                                                  padx=self.const_pad_x, pady=self.const_pad_y)
         entry_time = ttk.Entry(self.main_frame, textvariable=self.time_in_minutes)
         entry_time.grid(column=1, row=4, columnspan=2,
-                        sticky=constSticky, padx=constpadx,
-                        pady=constpady)
-        ttk.Label(self.main_frame, text="Comments :").grid(column=0, row=5, columnspan=3, sticky=constSticky,
-                                                           padx=constpadx,
-                                                           pady=constpady)
-        self.box_comments.grid(column=0, row=6, columnspan=3, sticky=constSticky, padx=constpadx, pady=constpady)
+                        sticky=self.const_sticky, padx=self.const_pad_x,
+                        pady=self.const_pad_y)
+        ttk.Label(self.main_frame, text="Comments :").grid(column=0, row=5, columnspan=3, sticky=self.const_sticky,
+                                                           padx=self.const_pad_x,
+                                                           pady=self.const_pad_y)
+        self.box_comments.grid(column=0, row=6, columnspan=3, sticky=self.const_sticky, padx=self.const_pad_x,
+                               pady=self.const_pad_y)
         save_button = ttk.Button(self.main_frame, text="Save", command=self.save_time_entry_click)
         save_button.grid(column=2, row=7,
-                         sticky=constSticky,
-                         padx=constpadx,
-                         pady=constpady)
+                         sticky=self.const_sticky,
+                         padx=self.const_pad_x,
+                         pady=self.const_pad_y)
         tab_order = (
             self.entry_issue, self.btn_find_issue, self.cmb_activity, entry_time, self.box_comments, save_button, )
 
@@ -218,8 +250,6 @@ try:
     root = Tkinter.Tk()
     root.resizable(False, False)
     # root.wm_iconbitmap(resource_path('appicon.ico'))
-    img = Tkinter.PhotoImage(file=resource_path('redmine_fluid_icon.gif'))
-    root.tk.call('wm', 'iconphoto', root._w, img)
     app = Application(master=root)
     root.mainloop()
 except Exception, e:
