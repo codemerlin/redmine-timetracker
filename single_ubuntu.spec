@@ -1,6 +1,6 @@
 # -*- mode: python -*-
-a = Analysis(['.\\First.py'],
-             pathex=['M:\\projects\\rm.helpmetrack'],
+a = Analysis(['First.py'],
+             pathex=['/home/mthakral/projects/rm.helpmetrack'],
              hiddenimports=[],
              hookspath=None,
              runtime_hooks=None)
@@ -11,8 +11,7 @@ exe = EXE(pyz,
           a.binaries,
           a.zipfiles,
           a.datas,
-          name='RmHelpMeTrack.exe',
-          icon='appicon.ico',
+          name='RmHelpMeTrack',
           debug=False,
           strip=None,
           upx=True,
