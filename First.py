@@ -20,23 +20,27 @@ import re
 
 
 class Application(ttk.Frame):
-    def read_settings(self):
+    def read_settings(self, show_error=True):
         settings = None
         try:
-            with open(self.resource_path('settings.json'), 'r') as json_file:
+            with open('settings.json', 'r') as json_file:
                 settings = json.load(json_file)
         except Exception:
-            self.settings_file_error()
-            raise
+            if show_error:
+                self.settings_file_error()
+            return settings
         if settings is None:
-            self.settings_file_error()
-            raise
+            if show_error:
+                self.settings_file_error()
+            return settings
         if settings['api_key'] == '' or settings['server_url'] == '' or settings['time_in_minutes'] == '':
-            self.settings_file_error()
-            raise
+            if show_error:
+                self.settings_file_error()
+            return settings
         if not self.is_valid_url(settings['server_url']):
-            self.settings_file_error()
-            raise
+            if show_error:
+                self.settings_file_error()
+            return settings
         return settings
 
     def __init__(self, master=None):
@@ -44,11 +48,9 @@ class Application(ttk.Frame):
         self.const_pad_y = 5
         self.const_pad_x = 10
         self.const_sticky = (Tkinter.W,)
-        settings = self.read_settings()
 
-        self.log_timer_duration = settings['time_in_minutes'] * 10000
-        self.redmine_client = rm.RedMineClient(settings['server_url'],
-                                               settings['api_key'])
+        self.log_timer_duration = None
+        self.redmine_client = None
 
         self.img = Tkinter.PhotoImage(file=self.resource_path('redmine_fluid_icon.gif'))
         master.tk.call('wm', 'iconphoto', master._w, self.img)
@@ -71,7 +73,11 @@ class Application(ttk.Frame):
         self.label_status = ttk.Label(self.main_frame)
 
         self.create_ui()
-        self.get_activities()
+        settings = self.read_settings(show_error=False)
+        if settings is None:
+            tkMessageBox.showwarning("Settings Missing", "Please use settings button to provide settings")
+        else:
+            self.reset_from()
 
     def resource_path(self, relative_path):
         """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -110,11 +116,11 @@ class Application(ttk.Frame):
         self.btn_find_issue.grid(column=1, row=1, columnspan=1, sticky=self.const_sticky, padx=self.const_pad_x,
                                  pady=self.const_pad_y)
 
-        ttk.Button(self.main_frame, text="Settings", command=lambda: SettingsDialog(self)).grid(column=2, row=1,
-                                                                                                columnspan=1,
-                                                                                                sticky=self.const_sticky,
-                                                                                                padx=self.const_pad_x,
-                                                                                                pady=self.const_pad_y)
+        ttk.Button(self.main_frame, text="Settings", command=self.settings_btn_click).grid(column=2, row=1,
+                                                                                           columnspan=1,
+                                                                                           sticky=self.const_sticky,
+                                                                                           padx=self.const_pad_x,
+                                                                                           pady=self.const_pad_y)
         ttk.Label(self.main_frame, textvariable=self.issue_subject, wraplength=370).grid(column=0, row=2, columnspan=3,
                                                                                          sticky=self.const_sticky,
                                                                                          padx=self.const_pad_x,
@@ -149,6 +155,9 @@ class Application(ttk.Frame):
         for w in tab_order:
             w.lift()
 
+    def settings_btn_click(self):
+        SettingsDialog(self)
+        self.reset_from()
 
     def save_time_entry_click(self):
         if not self.validate_form():
@@ -213,14 +222,17 @@ class Application(ttk.Frame):
         return True
 
     def req_find_issue(self):
-        self.issue = self.redmine_client.get_issue(int(self.issue_id.get()))
-        self.issue_subject.set(self.issue["subject"])
-        self.entry_issue.state(statespec=('disabled',))
-        self.btn_find_issue['text'] = "Edit"
-        self.after(self.log_timer_duration, self.start_logging)
+        if self.redmine_client is not None:
+            self.issue = self.redmine_client.get_issue(int(self.issue_id.get()))
+            self.issue_subject.set(self.issue["subject"])
+            self.entry_issue.state(statespec=('disabled',))
+            self.btn_find_issue['text'] = "Edit"
+            self.after(self.log_timer_duration, self.start_logging)
+        else:
+            tkMessageBox.showerror("Settings Missing", "Please provide settings, using settings button")
 
     def start_logging(self):
-        self.save_time_entry_server(self.log_timer_duration / 10000)
+        self.save_time_entry_server(self.log_timer_duration / 60000)
         self.after(self.log_timer_duration, self.start_logging)
 
     def get_activities(self):
@@ -244,6 +256,19 @@ class Application(ttk.Frame):
             self.cmb_activity.set(default_item)
             self.set_msg("")
             self.activity_thread.join()
+
+    def reset_from(self):
+        settings = self.read_settings(show_error=False)
+        if settings is not None:
+            self.log_timer_duration = settings['time_in_minutes'] * 60000
+            self.redmine_client = rm.RedMineClient(settings['server_url'],
+                                                   settings['api_key'])
+            self.get_activities()
+            self.issue = None
+            self.btn_find_issue['text'] = "Find"
+            self.entry_issue.state(statespec=('!disabled',))
+            self.issue_id.set("")
+            self.issue_subject.set("")
 
 
 try:
