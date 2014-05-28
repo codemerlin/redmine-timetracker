@@ -261,6 +261,7 @@ class Application(ttk.Frame):
         settings = self.read_settings(show_error=False)
         if settings is not None:
             self.log_timer_duration = settings['time_in_minutes'] * 60000
+
             self.redmine_client = rm.RedMineClient(settings['server_url'],
                                                    settings['api_key'])
             self.get_activities()
