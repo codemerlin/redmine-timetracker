@@ -21,6 +21,7 @@ class HelpMeTrack(QWidget):
         self.issue_id_box = QLineEdit()
         self.issue_btn = QPushButton("Find")
         self.settings_btn = QPushButton("Settings")
+        self.settings_btn
         self.issue_subject_label = QLabel()
         activity_label = QLabel("Activity :")
         self.activity_combobox = QComboBox()

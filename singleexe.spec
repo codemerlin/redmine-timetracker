@@ -1,5 +1,5 @@
 # -*- mode: python -*-
-a = Analysis(['.\\First.py'],
+a = Analysis(['.\\tkinter_main.py'],
              pathex=['M:\\projects\\rm.helpmetrack'],
              hiddenimports=[],
              hookspath=None,
