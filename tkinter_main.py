@@ -1,12 +1,6 @@
 import os
 import sys
 from time import strftime
-
-from SettingsDialog import SettingsDialog
-
-
-__author__ = 'Mohit_Thakral'
-
 import Tkinter as Tkinter
 # import Tkinter as Ttk
 import ttk as ttk
@@ -18,8 +12,14 @@ import json
 import tkMessageBox
 import re
 
+from SettingsDialog import SettingsDialog
+
+
+__author__ = 'Mohit_Thakral'
+
 
 class Application(ttk.Frame):
+
     def read_settings(self, show_error=True):
         settings = None
         try:
@@ -33,7 +33,7 @@ class Application(ttk.Frame):
             if show_error:
                 self.settings_file_error()
             return settings
-        if settings['api_key'] == '' or settings['server_url'] == '' or settings['time_in_minutes'] == '':
+        if (settings['api_key'] == '' or settings['server_url'] == '' or settings['time_in_minutes'] == ''):
             if show_error:
                 self.settings_file_error()
             return settings
@@ -52,7 +52,8 @@ class Application(ttk.Frame):
         self.log_timer_duration = None
         self.redmine_client = None
 
-        self.img = Tkinter.PhotoImage(file=self.resource_path('redmine_fluid_icon.gif'))
+        self.img = Tkinter.PhotoImage(
+            file=self.resource_path('redmine_fluid_icon.gif'))
         master.tk.call('wm', 'iconphoto', master._w, self.img)
         self.activity_thread = threading.Thread()
         self.activities = None
@@ -65,22 +66,28 @@ class Application(ttk.Frame):
         self.select_activity = Tkinter.StringVar()
         master.title("Redmine Time Tracker")
         self.main_frame = ttk.Frame(master)
-        self.main_frame.grid(column=0, row=0, sticky=(Tkinter.N, Tkinter.W, Tkinter.E, Tkinter.S), padx=0, pady=5)
-        self.cmb_activity = ttk.Combobox(self.main_frame, textvariable=self.select_activity)
-        self.box_comments = ScrolledText.ScrolledText(self.main_frame, width=47, height=8)
-        self.btn_find_issue = ttk.Button(self.main_frame, text="Find", command=self.find_issue_click)
-        self.entry_issue = ttk.Entry(self.main_frame, textvariable=self.issue_id)
+        self.main_frame.grid(column=0, row=0, sticky=(
+            Tkinter.N, Tkinter.W, Tkinter.E, Tkinter.S), padx=0, pady=5)
+        self.cmb_activity = ttk.Combobox(
+            self.main_frame, textvariable=self.select_activity)
+        self.box_comments = ScrolledText.ScrolledText(
+            self.main_frame, width=47, height=8)
+        self.btn_find_issue = ttk.Button(
+            self.main_frame, text="Find", command=self.find_issue_click)
+        self.entry_issue = ttk.Entry(
+            self.main_frame, textvariable=self.issue_id)
         self.label_status = ttk.Label(self.main_frame)
 
         self.create_ui()
         settings = self.read_settings(show_error=False)
         if settings is None:
-            tkMessageBox.showwarning("Settings Missing", "Please use settings button to provide settings")
+            tkMessageBox.showwarning("Settings Missing", "Please use settings \
+                button to provide settings")
         else:
             self.reset_from()
 
     def resource_path(self, relative_path):
-        """ Get absolute path to resource, works for dev and for PyInstaller """
+        # Get absolute path to resource, works for dev and for PyInstaller
         try:
             # PyInstaller creates a temp folder and stores path in _MEIPASS
             base_path = sys._MEIPASS
@@ -92,16 +99,17 @@ class Application(ttk.Frame):
     def is_valid_url(self, url):
         regex = re.compile(
             r'^https?://'  # http:// or https://
-            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain...
+            # domain...
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'
             r'localhost|'  # localhost...
             r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
             r'(?::\d+)?'  # optional port
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
         return url is not None and regex.search(url)
 
-
     def settings_file_error(self):
-        tkMessageBox.showerror("Error", "Error Reading Settings File, Make sure it exists with correct Values")
+        tkMessageBox.showerror("Error", "Error Reading Settings File, \
+         Make sure it exists with correct Values")
 
     def create_ui(self):
         # standard_font = label_status['font']
@@ -132,10 +140,12 @@ class Application(ttk.Frame):
                                pady=self.const_pad_y)
         self.cmb_activity.state(statespec=('readonly',))
 
-        ttk.Label(self.main_frame, text="Time In Minutes :").grid(column=0, row=4, columnspan=1,
+        ttk.Label(self.main_frame,
+                  text="Time In Minutes :").grid(column=0, row=4, columnspan=1,
                                                                   sticky=self.const_sticky,
                                                                   padx=self.const_pad_x, pady=self.const_pad_y)
-        entry_time = ttk.Entry(self.main_frame, textvariable=self.time_in_minutes)
+        entry_time = ttk.Entry(
+            self.main_frame, textvariable=self.time_in_minutes)
         entry_time.grid(column=1, row=4, columnspan=2,
                         sticky=self.const_sticky, padx=self.const_pad_x,
                         pady=self.const_pad_y)
@@ -144,7 +154,8 @@ class Application(ttk.Frame):
                                                            pady=self.const_pad_y)
         self.box_comments.grid(column=0, row=6, columnspan=3, sticky=self.const_sticky, padx=self.const_pad_x,
                                pady=self.const_pad_y)
-        save_button = ttk.Button(self.main_frame, text="Save", command=self.save_time_entry_click)
+        save_button = ttk.Button(
+            self.main_frame, text="Save", command=self.save_time_entry_click)
         save_button.grid(column=2, row=7,
                          sticky=self.const_sticky,
                          padx=self.const_pad_x,
@@ -166,7 +177,8 @@ class Application(ttk.Frame):
 
     def save_time_entry_server(self, time_in_minute):
         selected_activity = self.cmb_activity.get()
-        selected_activity_id = list(filter(lambda x: x["name"] == selected_activity, self.activities))[0]["id"]
+        selected_activity_id = list(
+            filter(lambda x: x["name"] == selected_activity, self.activities))[0]["id"]
         user_comments = self.box_comments.get('1.0', Tkinter.END)
         self.time_entry = rm.TimeEntry(activity_id=selected_activity_id, issue_id=int(self.issue_id.get()),
                                        comments=user_comments, time_in_minutes=time_in_minute.__str__())
@@ -176,8 +188,8 @@ class Application(ttk.Frame):
     def process_time_entry(self):
         status = self.redmine_client.post_time_entry(self.time_entry)
         if status:
-            self.set_success_msg("Time Entry Saved Successfully " + strftime("%Y-%m-%d %H:%M:%S"))
-
+            self.set_success_msg(
+                "Time Entry Saved Successfully " + strftime("%Y-%m-%d %H:%M:%S"))
 
     def find_issue_click(self):
         is_valid = self.validate_issue_id()
@@ -223,36 +235,39 @@ class Application(ttk.Frame):
 
     def req_find_issue(self):
         if self.redmine_client is not None:
-            self.issue = self.redmine_client.get_issue(int(self.issue_id.get()))
+            self.issue = self.redmine_client.get_issue(
+                int(self.issue_id.get()))
             self.issue_subject.set(self.issue["subject"])
             self.entry_issue.state(statespec=('disabled',))
             self.btn_find_issue['text'] = "Edit"
             self.after(self.log_timer_duration, self.start_logging)
         else:
-            tkMessageBox.showerror("Settings Missing", "Please provide settings, using settings button")
+            tkMessageBox.showerror(
+                "Settings Missing", "Please provide settings, using settings button")
 
     def start_logging(self):
         self.save_time_entry_server(self.log_timer_duration / 60000)
         self.after(self.log_timer_duration, self.start_logging)
 
     def get_activities(self):
-        self.activity_thread.__init__(target=self.req_get_activity_process, args=())
+        self.activity_thread.__init__(
+            target=self.req_get_activity_process, args=())
         self.set_msg("Loading Activities .. ")
         self.activity_thread.start()
         self.after(5, self.req_get_activity_end)
 
-
     def req_get_activity_process(self):
         self.activities = self.redmine_client.get_activities()
-
 
     def req_get_activity_end(self):
         if self.activity_thread.is_alive():
             self.after(5, self.req_get_activity_end)
             return
         else:
-            default_item = list(filter(lambda x: 'is_default' in x, self.activities))[0]["name"]
-            self.cmb_activity['values'] = list(map(lambda x: x["name"].encode('ascii', 'ignore'), self.activities))
+            default_item = list(
+                filter(lambda x: 'is_default' in x, self.activities))[0]["name"]
+            self.cmb_activity['values'] = list(
+                map(lambda x: x["name"].encode('ascii', 'ignore'), self.activities))
             self.cmb_activity.set(default_item)
             self.set_msg("")
             self.activity_thread.join()
