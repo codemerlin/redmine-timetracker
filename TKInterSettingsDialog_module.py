@@ -5,7 +5,7 @@ import json
 import Tkinter
 
 
-class SettingsDialog(tkSimpleDialog.Dialog):
+class TKInterSettingsDialog(tkSimpleDialog.Dialog):
     def __init__(self, parent, title=None):
         self.const_pad_y = parent.const_pad_y
         self.const_pad_x = parent.const_pad_x

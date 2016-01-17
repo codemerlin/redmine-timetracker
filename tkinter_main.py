@@ -12,7 +12,7 @@ import json
 import tkMessageBox
 import re
 
-from SettingsDialog import SettingsDialog
+from TKInterSettingsDialog_module import TKInterSettingsDialog
 
 
 __author__ = 'Mohit_Thakral'
@@ -167,7 +167,7 @@ class Application(ttk.Frame):
             w.lift()
 
     def settings_btn_click(self):
-        SettingsDialog(self)
+        TKInterSettingsDialog(self)
         self.reset_from()
 
     def save_time_entry_click(self):
@@ -257,7 +257,7 @@ class Application(ttk.Frame):
         self.after(5, self.req_get_activity_end)
 
     def req_get_activity_process(self):
-        self.activities = self.redmine_client.get_activities()
+        self.activities = self.redmine_client.getActivities()
 
     def req_get_activity_end(self):
         if self.activity_thread.is_alive():

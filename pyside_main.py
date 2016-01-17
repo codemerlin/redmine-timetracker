@@ -3,8 +3,8 @@ import sys
 import json
 from PySide import QtCore, QtGui
 import re
-import threading as threading
 import RedMineClient as rm
+import SettingsDialogModule as SettingsDialogModule
 qt_app = QtGui.QApplication(sys.argv)
 
 
@@ -18,7 +18,7 @@ class HelpMeTrack(QtGui.QWidget):
         self.setWindowIcon(QtGui.QIcon(
             self.resource_path('redmine_fluid_icon.gif')))
         self.status_label = QtGui.QLabel()
-        self.issue_id_box = QtGui.QLineEdit()
+        self.issueIdBox = QtGui.QLineEdit()
         self.issue_btn = QtGui.QPushButton("Find")
         self.settings_btn = QtGui.QPushButton("Settings")
         self.issue_subject_label = QtGui.QLabel()
@@ -26,12 +26,13 @@ class HelpMeTrack(QtGui.QWidget):
         self.activity_combobox = QtGui.QComboBox()
         time_in_min_label = QtGui.QLabel("Time in Min :")
         self.time_in_min_box = QtGui.QLineEdit()
-        comments_label = QtGui.QLabel("Comment :")
-        self.comments_box = QtGui.QTextEdit()
-        self.configure_layout(activity_label, comments_label,
-                              time_in_min_label)
+        comments_label = QtGui.QLabel("Activity :")
+        self.comments_box = QtGui.QTextEdit("Comments :")
+        self.configureLayout(activity_label, comments_label,
+                             time_in_min_label)
+        self.setFixedSize(410, 510)
         self.attach_events()
-        self.activity_thread = threading.Thread()
+        # self.activity_thread = threading.Thread()
         settings = self.read_settings(show_error=False)
         if settings is None:
             QtGui.QMessageBox.Warning(self, "Settings Missing",
@@ -77,12 +78,12 @@ class HelpMeTrack(QtGui.QWidget):
         return url is not None and regex.search(url)
 
     # region UI Functions
-    def configure_layout(self, activity_label, comments_label,
-                         time_in_min_label):
+    def configureLayout(self, activity_label, comments_label,
+                        time_in_min_label):
         # Prepare and configure GridLayout
         grid_layout = QtGui.QGridLayout()
         grid_layout.addWidget(self.status_label, 0, 0, 1, 3)
-        grid_layout.addWidget(self.issue_id_box, 1, 0)
+        grid_layout.addWidget(self.issueIdBox, 1, 0)
         grid_layout.addWidget(self.issue_btn, 1, 1)
         grid_layout.addWidget(self.settings_btn, 1, 2)
         grid_layout.addWidget(self.issue_subject_label, 2, 0, 1, 3)
@@ -99,7 +100,7 @@ class HelpMeTrack(QtGui.QWidget):
             "QLabel { color : Red; }")
         self.status_label.setText(message)
 
-    def set_msg(self, message):
+    def setMessage(self, message):
         self.status_label.setStyleSheet(
             "QLabel { color : black; }")
         self.status_label.setText(message)
@@ -112,12 +113,18 @@ class HelpMeTrack(QtGui.QWidget):
     # region Click Events
     def show_settings(self):
         print "Setting clicked"
+        SettingsDialogModule.SettingsDialog(self).show()
         pass
     # endregion
 
     def attach_events(self):
         # Attach the events
         self.settings_btn.clicked.connect(self.show_settings)
+        self.issue_btn.clicked.connect(self.issue_btn_click)
+        pass
+
+    def issue_btn_click(self):
+
         pass
 
     # endregion
@@ -144,69 +151,68 @@ class HelpMeTrack(QtGui.QWidget):
     def reset_from(self):
         settings = self.read_settings(show_error=False)
         if settings is not None:
-            self.log_timer_duration = settings['time_in_minutes'] * 60000
+            self.timerInMilliSecond = settings['time_in_minutes'] * 60000
 
-            self.redmine_client = rm.RedMineClient(settings['server_url'],
-                                                   settings['api_key'])
-            self.get_activities()
+            self.redmineClient = rm.RedMineClient(settings['server_url'],
+                                                  settings['api_key'])
+            self.getActivities()
             self.issue = None
             self.issue_btn.setText("Find")
-            self.issue_id_box.setEnabled(True)
+            self.issueIdBox.setEnabled(True)
             # self.issue_id.set("")
             # self.issue_subject.set("")
 
     # class ClearLabel(QtCore.QObject):
         # clearMsg = QtCore.Signal()
 
-    def get_activities(self):
+    def getActivities(self):
         # self.activity_thread.__init__(
-            # target=self.req_get_activity_process, args=())
-        self.set_msg("Loading Activities .. ")
+            # target=self.postActivitiesRecd, args=())
+        self.setMessage("Loading Activities ...... ")
         self.getActivityThread = GetActivitiesThread(
-            redmine_client=self.redmine_client)
+            redmineClient=self.redmineClient)
         self.getActivityThread.activitiesRecd.connect(
-            self.req_get_activity_process)
+            self.postActivitiesRecd)
         if not self.getActivityThread.isRunning():
             self.getActivityThread.start()
-        # self.activity_thread.start()
-        # self.clear_label_signal = self.ClearLabel()
-        # self.clear_label_signal.clearMsg.connect(self.clear_msg)
 
-    # def clear_msg(self):
-        # self.set_msg("")
-
-    def req_get_activity_process(self, actvities):
+    def postActivitiesRecd(self, actvities):
         self.activities = actvities
-        # print(self.activities)
-        default_item = list(
+        defaultActivity = list(
             filter(
                 lambda x: 'is_default' in x, self.activities))[0]["name"]
-        # items = list(
-        #     map(
-        #         lambda x: x["name"].encode('ascii', 'ignore'),
-        #         self.activities))
-        items = {k["id"]: k['name'].encode(
+        dictActivities = {k["id"]: k['name'].encode(
             'ascii', 'ignre') for k in self.activities}
-        # print(items)
-        # print(default_item)
-        self.activity_combobox.addItems(items.values())
+        self.activity_combobox.addItems(dictActivities.values())
         self.activity_combobox.setCurrentIndex(
-            items.values().index(default_item))
-        self.set_msg("")
-        # self.clear_label_signal.clear_msg.emit()
+            dictActivities.values().index(defaultActivity))
+        self.setMessage("")
+
+
+class GetIssueThread(QtCore.QThread):
+    issueRecd = QtCore.Signal(list)
+
+    def __init__(self, redmineClient, parent=None):
+        super(GetIssueThread, self).__init__(parent)
+        self.exiting = False
+        self.redmineClient = redmineClient
+
+    def run(self, issueId):
+        issue = self.redmineClient.get_issue(issueId)
+        # print(activities)
+        self.issueRecd.emit(issue)
 
 
 class GetActivitiesThread(QtCore.QThread):
-    # Signal once activities has been received
     activitiesRecd = QtCore.Signal(list)
 
-    def __init__(self, redmine_client, parent=None):
+    def __init__(self, redmineClient, parent=None):
         super(GetActivitiesThread, self).__init__(parent)
         self.exiting = False
-        self.redmine_client = redmine_client
+        self.redmineClient = redmineClient
 
     def run(self):
-        activities = self.redmine_client.get_activities()
+        activities = self.redmineClient.getActivities()
         # print(activities)
         self.activitiesRecd.emit(activities)
 
