@@ -40,10 +40,12 @@ class RedMineClient:
             issue = requests.get(
                 self.server_url + self.issue_path.format(issueid),
                 headers=self.headers, verify=False,
-                proxies=self.proxies).json()
+                ).json()
+                # proxies=self.proxies).json()
             return issue["issue"]
         except ValueError:
-            issue = None
+            issue = False
+            return issue
         return issue
 
     def getActivities(self):
@@ -52,7 +54,7 @@ class RedMineClient:
                 self.server_url + self.activity_endpoint, headers=self.headers,
                 verify=False
             ).json()
-            #, proxies=self.proxies).json()
+            # , proxies=self.proxies).json()
             return activities["time_entry_activities"]
         except ValueError:
             activities = None

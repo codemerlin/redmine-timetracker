@@ -37,10 +37,11 @@ class SettingsDialog(QtGui.QDialog):
         self.setLayout(grid_layout)
 
     def readSettings(self):
-        print(self.settings['server_url'])
-        self.serverUrlBox.setText(self.settings['server_url'])
-        self.apiKeyBox.setText(self.settings['api_key'])
-        self.timeInMinBox.setText(str(self.settings['time_in_minutes']))
+        if(self.settings):
+            # print(self.settings['server_url'])
+            self.serverUrlBox.setText(self.settings['server_url'])
+            self.apiKeyBox.setText(self.settings['api_key'])
+            self.timeInMinBox.setText(str(self.settings['time_in_minutes']))
 
     # def body(self, master):
 
