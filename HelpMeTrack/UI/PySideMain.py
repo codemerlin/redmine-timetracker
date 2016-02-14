@@ -45,10 +45,9 @@ class HelpMeTrack(QtGui.QWidget):
         settings = self.read_settings(show_error=False)
         if settings is None:
             QtGui.QMessageBox.warning(self, "Settings Missing",
-                                      "Please use \
-                                      settings button to provide settings")
+                                      "Please provide redmine server url, apikey. Use settings button to do so ")
         else:
-            self.reset_from()
+            self.reset_form()
 
     def read_settings(self, show_error=True):
         settings = None
@@ -154,7 +153,7 @@ class HelpMeTrack(QtGui.QWidget):
         # Run the Qt application
         qt_app.exec_()
 
-    def reset_from(self):
+    def reset_form(self):
         settings = self.read_settings(show_error=False)
         if settings is not None:
             self.redmineClient = RedMineClient(settings['server_url'],
