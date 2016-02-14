@@ -18,7 +18,7 @@ class HelpMeTrack(QtGui.QWidget):
     def __init__(self):
         QtGui.QWidget.__init__(self)
         # # Set Window properties and create controls
-        self.setWindowFlags(QtCore.Qt.WindowMinimizeButtonHint)
+        # self.setWindowFlags(QtCore.Qt.WindowMinimizeButtonHint)
         self.setWindowTitle("Redmine Time Tracker")
         self.setWindowIcon(QtGui.QIcon(
             self.resource_path('redmine_fluid_icon.gif')))

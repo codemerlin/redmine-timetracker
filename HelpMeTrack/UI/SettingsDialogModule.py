@@ -50,9 +50,11 @@ class SettingsDialog(QtGui.QDialog):
         with open('settings.json', 'w') as outfile:
             json.dump(settings, outfile)
         self.resetParent()
+        self.done()
         self.close()
 
     def cancelClicked(self):
+        self.done()
         self.close()
         pass
 
