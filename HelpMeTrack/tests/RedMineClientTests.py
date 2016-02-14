@@ -21,7 +21,6 @@ class RedMineClientTests(unittest.TestCase):
         self.assertIsNone(issue)
         print(" issue not found ")
 
-
     def test_getActivites(self):
         print("trying to get activities")
         activities = self.client.get_activities()

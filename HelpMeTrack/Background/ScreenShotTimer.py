@@ -1,19 +1,21 @@
 from PySide import QtCore, QtGui
 
 
-class ScreenShotTimer(QtCore.QTimer):
+class ScreenShotTimer():
 
-    def __init__(self, parent=None):
-        super(ScreenShotTimer, self).__init__(parent)
+    def __init__(self):
+        pass
 
-    def registerScreenShotCallback(self, callback):
+    def start(self, callback, timeInMilliSeconds):
         self.currentCallback = callback
-        self.stop()
-        self.timeout.connect(self.captureScreenShot)
-        # self.setSingleShot(True)
-        # TODO:: change this to calculate random time
-        randomMin = 1
-        self.start(randomMin*6000)
+        self.timer = QtCore.QTimer()
+        self.timer.setInterval(timeInMilliSeconds)
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.captureScreenShot)
+        self.timer.start()
+
+    def stop(self):
+        self.timer.stop()
 
     def captureScreenShot(self):
         if self.currentCallback is not None:

@@ -12,7 +12,7 @@ class TimeEntryRequest(object):
 class TimeEntry(object):
 
     def __init__(self, activity_id, issue_id, comments, time_in_minutes):
-        self.hours = time_in_minutes+"m"
+        self.hours = str(time_in_minutes)+"m"
         self.comments = comments
         self.issue_id = issue_id
         self.activity_id = activity_id
@@ -26,6 +26,7 @@ class RedMineClient:
         self.issue_path = "/issues/{0}.json"
         self.time_entry_path = "/time_entries.json"
         self.activity_endpoint = "/enumerations/time_entry_activities.json"
+        self.current_user_endpoint = "/users/current.json"
         self.headers = {
             'content-type': 'application/json',
             'X-Redmine-API-Key': self.api_key
@@ -40,8 +41,8 @@ class RedMineClient:
             issue = requests.get(
                 self.server_url + self.issue_path.format(issueid),
                 headers=self.headers, verify=False,
-                ).json()
-                # proxies=self.proxies).json()
+            ).json()
+            # proxies=self.proxies).json()
             return issue["issue"]
         except ValueError:
             issue = False
@@ -67,3 +68,11 @@ class RedMineClient:
         r = requests.post(self.server_url + self.time_entry_path,
                           data=inputData, headers=self.headers, verify=False)
         return r.status_code == 201
+
+    def getCurrentUser(self):
+        user = requests.get(
+                self.server_url + self.current_user_endpoint, headers=self.headers,
+                verify=False
+            ).json()
+
+        return user["user"]["login"]

@@ -8,12 +8,13 @@ import SettingsDialogModule as SettingsDialogModule
 from HelpMeTrack.Background.GetIssueThread import GetIssueThread
 from HelpMeTrack.Background.GetActivitiesThread \
     import GetActivitiesThread
-from HelpMeTrack.Background.ScreenShotTimer \
-    import ScreenShotTimer
+from HelpMeTrack.Background.CoreEngine \
+    import CoreEngine
+from random import randint
+from pprint import pprint
 
 
 class HelpMeTrack(QtGui.QWidget):
-
     def __init__(self):
         QtGui.QWidget.__init__(self)
         # # Set Window properties and create controls
@@ -41,8 +42,8 @@ class HelpMeTrack(QtGui.QWidget):
         self.configureLayout(activity_label, comments_label,
                              time_in_min_label)
         self.attach_events()
-        self.createTimers()
         self.setFixedSize(410, 510)
+        self.conversationToMinFactor = 60000
         # self.activity_thread = threading.Thread()
         settings = self.read_settings(show_error=False)
         if settings is None:
@@ -51,15 +52,6 @@ class HelpMeTrack(QtGui.QWidget):
                                       settings button to provide settings")
         else:
             self.reset_from()
-
-    def createTimers(self):
-        self.postTimer = QtCore.QTimer(self)
-        self.postTimer.timeout.connect(self.postEntry)
-        self.postTimer.start(1000)
-        self.screenShotTimer = ScreenShotTimer()
-        self.screenShotTimer.stop()
-        self.screenShotTimer.registerScreenShotCallback(
-            self.setScreenShotLabel)
 
     def read_settings(self, show_error=True):
         settings = None
@@ -75,8 +67,8 @@ class HelpMeTrack(QtGui.QWidget):
                 self.settings_file_error()
             return settings
         if (settings['api_key'] == '' or
-                settings['server_url'] == '' or
-                settings['time_in_minutes'] == ''):
+                    settings['server_url'] == '' or
+                    settings['time_in_minutes'] == ''):
             if show_error:
                 self.settings_file_error()
             return settings
@@ -115,7 +107,8 @@ class HelpMeTrack(QtGui.QWidget):
         # gridLayout.addWidget(comments_label, 5, 0, 1, 3)
         gridLayout.addWidget(self.comments_box, 5, 0, 1, 3)
         # gridLayout.addWidget(self.comments_box, 6, 0, 1, 3)
-        gridLayout.addWidget(self.screenShotLabel, 6, 0, 1, 3)
+        gridLayout.addWidget(QtGui.QLabel("Last Screenshot"), 6, 0, 1, 3)
+        gridLayout.addWidget(self.screenShotLabel, 7, 0, 1, 3)
         self.setLayout(gridLayout)
 
     def set_error_msg(self, message):
@@ -138,6 +131,7 @@ class HelpMeTrack(QtGui.QWidget):
         print "Setting clicked"
         SettingsDialogModule.SettingsDialog(self).show()
         pass
+
     # endregion
 
     def attach_events(self):
@@ -181,8 +175,8 @@ class HelpMeTrack(QtGui.QWidget):
             # self.issue_id.set("")
             # self.issue_subject.set("")
 
-    # class ClearLabel(QtCore.QObject):
-        # clearMsg = QtCore.Signal()
+            # class ClearLabel(QtCore.QObject):
+            # clearMsg = QtCore.Signal()
 
     def issue_btn_click(self):
         try:
@@ -197,7 +191,8 @@ class HelpMeTrack(QtGui.QWidget):
             if not self.getIssueThread.isRunning():
                 self.getIssueThread.start()
         except Exception, e:
-            print "I/O error({0}): {1}".format(e.errno, e.strerror)
+            print "Unexpected error:", sys.exc_info()[0]
+            raise
 
     def validate_issue_id(self, issue_id):
         is_issue_id_valid = issue_id.isdigit()
@@ -207,7 +202,7 @@ class HelpMeTrack(QtGui.QWidget):
 
     def postIssueFound(self, issue):
         try:
-            if(type(issue) is bool):
+            if (type(issue) is bool):
                 self.set_error_msg("Issue not found")
                 # self.getIssueThread.
             else:
@@ -216,18 +211,41 @@ class HelpMeTrack(QtGui.QWidget):
                 self.issue_subject_label.setText(issue["subject"])
                 self.issue_btn.setText("Edit")
                 self.issueIdBox.setEnabled(False)
+                self.startTimers()
+        except:
+            # pprint(e)
+            print "Unexpected error:", sys.exc_info()[0]
+            raise
 
-        except Exception, e:
-            print "I/O error({0}): {1}".format(e.errno, e.strerror)
+    def startTimers(self):
+        print('starting timers')
+        self.coreEngine = CoreEngine(
+            self.screenShotLabel, self.redmineClient,
+            self.set_error_msg, self.set_success_msg,
+            self.issue['id'],
+            self.collectActivityId, self.collectComment, self.collectTimerInterval,
+            self.conversationToMinFactor)
+        self.startingTimer = True
+        self.coreEngine.start()
 
-    def setScreenShotLabel(self, screenShotPixMap):
-        self.screenShotLabel.setPixmap(screenShotPixMap.scaled(
-            self.screenShotLabel.size(), QtCore.Qt.KeepAspectRatio,
-            QtCore.Qt.SmoothTransformation))
+    def collectActivityId(self):
+        return dict((v, k) for k, v in self.dictActivities.items()).get(self.activity_combobox.currentText())
+
+    def collectComment(self):
+        return self.comments_box.toPlainText()
+
+    def collectTimerInterval(self):
+        return randint(1,10) * self.conversationToMinFactor
+       # if self.startingTimer:
+       #     self.startTimerInterval =randint(1,5)
+       #     return self.startTimerInterval * 6000
+       #  # return randint(1,10) * 6000
+       # else
+       #  return (self.startTimerInterval1 * 6000
 
     def getActivities(self):
         # self.activity_thread.__init__(
-            # target=self.postActivitiesRecd, args=())
+        # target=self.postActivitiesRecd, args=())
         self.setMessage("Loading Activities ...... ")
         self.getActivityThread = GetActivitiesThread(
             redmineClient=self.redmineClient)
@@ -241,12 +259,10 @@ class HelpMeTrack(QtGui.QWidget):
         defaultActivity = list(
             filter(
                 lambda x: 'is_default' in x, self.activities))[0]["name"]
-        dictActivities = {k["id"]: k['name'].encode(
+        self.dictActivities = {k["id"]: k['name'].encode(
             'ascii', 'ignre') for k in self.activities}
-        self.activity_combobox.addItems(dictActivities.values())
-        self.activity_combobox.setCurrentIndex(
-            dictActivities.values().index(defaultActivity))
-        self.setMessage("")
 
-    def postEntry(self):
-        pass
+        self.activity_combobox.addItems(self.dictActivities.values())
+        self.activity_combobox.setCurrentIndex(
+            self.dictActivities.values().index(defaultActivity))
+        self.setMessage("")

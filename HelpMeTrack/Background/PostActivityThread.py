@@ -2,15 +2,16 @@ from PySide import QtCore
 
 
 class PostActivityThread(QtCore.QThread):
-    activityPosted = QtCore.Signal()
+    activityPosted = QtCore.Signal(bool)
 
-    def __init__(self, screenShot,redmineClient, parent=None):
+    def __init__(self, redmineClient, time_entry,
+                 parent=None):
         super(PostActivityThread, self).__init__(parent)
+        self.time_entry = time_entry
         self.exiting = False
-        self.screenShot = screenShot
         self.redmineClient = redmineClient
 
     def run(self):
-        status = self.redmineClient.post_time_entry()
+        status = self.redmineClient.post_time_entry(self.time_entry)
         # print(activities)
-        self.activitiesRecd.emit(status)
+        self.activityPosted.emit(status)
