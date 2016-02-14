@@ -8,29 +8,30 @@ import paramiko
 class UploadImageThread(QtCore.QThread):
     imageUploaded = QtCore.Signal(bool)
 
-    def __init__(self, screenShotPixMap, currentUser, partialFileName, parent=None):
+    def __init__(self, fileNameOnly, completeFileName, currentUser, partialFileName, parent=None):
         super(UploadImageThread, self).__init__(parent)
         self.exiting = False
-        self.screenShotPixMap = screenShotPixMap
         self.currentUser = currentUser
         self.partialFileName = partialFileName
+        self.fileNameOnly = fileNameOnly
+        self.completeFileName = completeFileName
 
     def run(self):
         # print(activities)
-        dirname = tempfile.gettempdir()
-        filenameOnly = self.currentUser + self.partialFileName + ".png"
-        completeFileName = dirname + os.path.sep + filenameOnly
-        self.screenShotPixMap.toImage().save(completeFileName)
-        s = paramiko.SSHClient()
-        s.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        s.connect("ti-images.cloudapp.net", 22, username='mthakral', password=')wl12345', timeout=4)
-        sftp = s.open_sftp()
-        basedirPath = '/home/mthakral/upload/' # + self.currentUser + '/' + strftime("%Y%m%d", gmtime())
-        # self.mkdir_p(sftp,basedirPath, True)
-        sftp.put(completeFileName, basedirPath + filenameOnly)
-        os.remove(completeFileName)
-        print(completeFileName)
-        self.imageUploaded.emit(True)
+       try :
+           self.sftpClient = paramiko.SSHClient()
+           self.sftpClient.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+           self.sftpClient.connect("ti-images.cloudapp.net", 22, username='mthakral', password=')wl12345', timeout=4)
+           sftp = self.sftpClient.open_sftp()
+           basedirPath = '/home/mthakral/upload/' # + self.currentUser + '/' + strftime("%Y%m%d", gmtime())
+           # self.mkdir_p(sftp,basedirPath, True)
+           sftp.put(self.completeFileName, basedirPath + self.fileNameOnly)
+           os.remove(self.completeFileName)
+           print(self.completeFileName)
+           self.imageUploaded.emit(True)
+       finally:
+           if self.sftpClient:
+               self.sftpClient.close()
 
     def mkdir_p(self, sftp, remote, is_dir=False):
         """

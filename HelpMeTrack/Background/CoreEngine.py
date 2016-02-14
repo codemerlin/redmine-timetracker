@@ -11,6 +11,10 @@ from HelpMeTrack.Background.GetCurrentUserThread \
     import GetCurrentUserThread
 from time import gmtime, strftime, localtime
 import uuid
+import tempfile
+from time import gmtime, strftime
+import os
+
 
 class CoreEngine(object):
     def __init__(self, labelToShowSS, redMineClient,
@@ -28,6 +32,8 @@ class CoreEngine(object):
         self.commentTextCallback = commentTextCallback
         self.timerIntervalCallback = timerIntervalCallback
         self.conversationToMinFactor = conversationToMinFactor
+        self.uploadImageThreadList = []
+        self.postActivityThreadList = []
         self.currentUser = None
         print('Core engine created')
 
@@ -44,6 +50,13 @@ class CoreEngine(object):
     def stop(self):
         if (self.screenShotTimer is not None):
             self.screenShotTimer.stop()
+        QtCore.QTimer().singleShot(6000,self.postStopCleanup)
+        self.cleanPostActivityThreadList()
+        self.cleanUploadImageThreadList()
+
+    def postStopCleanup(self):
+        self.cleanPostActivityThreadList()
+        self.cleanUploadImageThreadList()
 
     def setScreenShotLabel(self):
         self.screenShotLabel.setPixmap(self.screenShotPixMap.scaled(
@@ -52,9 +65,9 @@ class CoreEngine(object):
 
     def postScreenShotTimer(self, screenShotPixMap):
         self.screenShotPixMap = screenShotPixMap
-        self.partialFileName = "_" + str(self.issueId)+strftime("_%Y%m%d_%H-%M-%S", gmtime())
+        self.partialFileName = "_" + str(self.issueId) + strftime("_%Y%m%d_%H-%M-%S", gmtime())
         # print(" kicking of threads for : "+ self.partialFileName )
-        print(" threads are starting for tracking id :: "+ str(self.trackerId))
+        print(" threads are starting for tracking id :: " + str(self.trackerId))
         if (self.currentUser is None):
             self.startGetCurrentUserThread()
         else:
@@ -64,37 +77,71 @@ class CoreEngine(object):
         self.start()
 
     def startPostActivityThread(self):
-        timeEntry = TimeEntry(
+        self.timeEntry = TimeEntry(
             activity_id=self.activityIdCallback(),
             issue_id=self.issueId,
             comments=self.commentTextCallback() + " -- " + self.partialFileName,
             time_in_minutes=self.timeinMilliSeconds / self.conversationToMinFactor)
+        self.cleanPostActivityThreadList()
+        # if (self.postActivityThread is not None and self.postActivityThread.isRunning()):
+        #     while (self.postActivityThread.isRunning()):
+        #         print('postActivity thread is running')
+
         # pprint(vars(timeEntry))
-        postActivityThread = PostActivityThread(self.redMineClient, timeEntry)
+        postActivityThread = PostActivityThread(self.redMineClient, self.timeEntry)
         postActivityThread.activityPosted.connect(
             self.postActivitiesPosted)
         if not postActivityThread.isRunning():
             postActivityThread.start()
+        self.postActivityThreadList.append(postActivityThread)
 
     def postActivitiesPosted(self, status):
         if status:
             self.successHandler("Activity posted successfully")
 
     def startGetCurrentUserThread(self):
-        currentUserThread = GetCurrentUserThread(self.redMineClient)
-        currentUserThread.currentUserRecd.connect(self.postGetCurrentUser)
-        if not currentUserThread.isRunning():
-            currentUserThread.start()
+        self.currentUserThread = GetCurrentUserThread(self.redMineClient)
+        self.currentUserThread.currentUserRecd.connect(self.postGetCurrentUser)
+        if not self.currentUserThread.isRunning():
+            self.currentUserThread.start()
 
     def postGetCurrentUser(self, user):
         self.currentUser = user
         self.startUploadImageThread()
 
     def startUploadImageThread(self):
-        uploadImageThread = UploadImageThread(self.screenShotPixMap, self.currentUser, self.partialFileName)
+        self.serializeImage()
+        # if (self.uploadImageThread is not None and self.uploadImageThread.isRunning()):
+        #     while (self.uploadImageThread.isRunning()):
+        #         print('uplaodImageThread is running')
+        self.cleanUploadImageThreadList()
+        uploadImageThread = UploadImageThread(self.filenameOnly, self.completeFileName, self.currentUser,
+                                                   self.partialFileName)
         uploadImageThread.imageUploaded.connect(self.postImageUploaded)
         if not uploadImageThread.isRunning():
             uploadImageThread.start()
+        self.uploadImageThreadList.append(uploadImageThread)
+
+    def cleanPostActivityThreadList(self):
+        newList = []
+        for thread in self.postActivityThreadList:
+            if(thread.isRunning()):
+                newList.append(thread)
+        self.postActivityThreadList = newList
+
+    def cleanUploadImageThreadList(self):
+        newList = []
+        for thread in self.uploadImageThreadList:
+            if(thread.isRunning()):
+                newList.append(thread)
+        self.uploadImageThreadList = newList
+
+
+    def serializeImage(self):
+        dirname = tempfile.gettempdir()
+        self.filenameOnly = self.currentUser + self.partialFileName + ".png"
+        self.completeFileName = dirname + os.path.sep + self.filenameOnly
+        self.screenShotPixMap.toImage().save(self.completeFileName)
 
     def postImageUploaded(self, status):
         print(status)

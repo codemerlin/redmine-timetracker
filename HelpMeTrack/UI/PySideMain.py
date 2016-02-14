@@ -24,23 +24,21 @@ class HelpMeTrack(QtGui.QWidget):
             self.resource_path('redmine_fluid_icon.gif')))
         self.status_label = QtGui.QLabel()
         self.issueIdBox = QtGui.QLineEdit()
-        self.issue_btn = QtGui.QPushButton("Find")
+        self.issueIdBox.setPlaceholderText("Issue Id")
+        self.issue_btn = QtGui.QPushButton("Start")
         self.settings_btn = QtGui.QPushButton("Settings")
         self.issue_subject_label = QtGui.QLabel()
         activity_label = QtGui.QLabel("Activity :")
         self.activity_combobox = QtGui.QComboBox()
         comments_label = QtGui.QLabel("Comments :")
         self.comments_box = QtGui.QTextEdit()
-        self.screenShotLabel = QtGui.QLabel()
-        self.screenShotPixMap = QtGui.QPixmap(400, 300)
-        self.screenShotPixMap.fill(QtCore.Qt.white)
-        self.screenShotLabel.setPixmap(self.screenShotPixMap.scaled(
-            self.screenShotLabel.size(), QtCore.Qt.KeepAspectRatio,
-            QtCore.Qt.SmoothTransformation))
+        self.createClockUI()
+        self.setWhiteImage()
         self.configureLayout(activity_label, comments_label)
         self.attach_events()
         self.setFixedSize(410, 510)
-        self.conversationToMinFactor = 60000
+        self.conversationToMinFactor = 6000
+
         # self.activity_thread = threading.Thread()
         settings = self.read_settings(show_error=False)
         if settings is None:
@@ -48,6 +46,32 @@ class HelpMeTrack(QtGui.QWidget):
                                       "Please provide redmine server url, apikey. Use settings button to do so ")
         else:
             self.reset_form()
+
+    def createClockUI(self):
+        self.clockValue = 0
+        self.clockTimer = QtCore.QTimer()
+        self.clockTimer.setInterval(6000)
+        self.clockTimer.timeout.connect(self.updateClockValue)
+        self.timerLabel = QtGui.QLabel()
+        self.timerLabel.setStyleSheet(
+            "QLabel { color : black; font-weight: bold; }")
+
+    def updateClockValue(self):
+        self.clockValue+=1
+        self.updateClockLabel()
+
+    def updateClockLabel(self):
+        h,m = divmod(self.clockValue,60)
+        self.timerLabel.setText("{:02d}:{:02d}".format(h, m))
+
+
+    def setWhiteImage(self):
+        self.screenShotLabel = QtGui.QLabel()
+        screenShotPixMap = QtGui.QPixmap(400, 300)
+        screenShotPixMap.fill(QtCore.Qt.white)
+        self.screenShotLabel.setPixmap(screenShotPixMap.scaled(
+            self.screenShotLabel.size(), QtCore.Qt.KeepAspectRatio,
+            QtCore.Qt.SmoothTransformation))
 
     def read_settings(self, show_error=True):
         settings = None
@@ -88,7 +112,8 @@ class HelpMeTrack(QtGui.QWidget):
     def configureLayout(self, activity_label, comments_label):
         # Prepare and configure GridLayout
         gridLayout = QtGui.QGridLayout()
-        gridLayout.addWidget(self.status_label, 0, 0, 1, 3)
+        gridLayout.addWidget(self.status_label, 0, 0, 1, 2)
+        gridLayout.addWidget(self.timerLabel,0,2,1,1)
         gridLayout.addWidget(self.issueIdBox, 1, 0)
         gridLayout.addWidget(self.issue_btn, 1, 1)
         gridLayout.addWidget(self.settings_btn, 1, 2)
@@ -160,7 +185,7 @@ class HelpMeTrack(QtGui.QWidget):
                                                settings['api_key'])
             self.getActivities()
             self.issue = None
-            self.issue_btn.setText("Find")
+            self.issue_btn.setText("Start")
             self.issueIdBox.setEnabled(True)
             # self.issue_id.set("")
             # self.issue_subject.set("")
@@ -169,9 +194,8 @@ class HelpMeTrack(QtGui.QWidget):
             # clearMsg = QtCore.Signal()
 
     def issue_btn_click(self):
-        if (self.issue_btn.text() == "Edit"):
+        if (self.issue_btn.text() == "Stop"):
             self.stopTimers()
-            self.issueIdBox.setEnabled(True)
             return
 
         try:
@@ -198,6 +222,13 @@ class HelpMeTrack(QtGui.QWidget):
     def stopTimers(self):
         if (self.coreEngine is not None):
             self.coreEngine.stop()
+        self.setMessage("")
+        self.issueIdBox.setEnabled(True)
+        self.clockTimer.stop()
+        self.issue_btn.setText("Start")
+        self.clockValue = 0
+        self.updateClockLabel()
+
 
     def postIssueFound(self, issue):
         try:
@@ -208,7 +239,7 @@ class HelpMeTrack(QtGui.QWidget):
                 self.setMessage("")
                 self.issue = issue
                 self.issue_subject_label.setText(issue["subject"])
-                self.issue_btn.setText("Edit")
+                self.issue_btn.setText("Stop")
                 self.issueIdBox.setEnabled(False)
                 self.startTimers()
         except:
@@ -226,6 +257,12 @@ class HelpMeTrack(QtGui.QWidget):
             self.conversationToMinFactor)
         self.startingTimer = True
         self.coreEngine.start()
+        self.clockValue = 0
+        self.updateClockLabel()
+        self.clockTimer.start()
+
+
+
 
     def collectActivityId(self):
         return dict((v, k) for k, v in self.dictActivities.items()).get(self.activity_combobox.currentText())
