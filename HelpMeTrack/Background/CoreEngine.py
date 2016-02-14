@@ -33,8 +33,8 @@ class CoreEngine(object):
 
     def start(self):
         self.timeinMilliSeconds = self.timerIntervalCallback()
-        print('Time after which, next entry would be posted : ' + str(
-            self.timeinMilliSeconds / self.conversationToMinFactor) + " minutes")
+        # print('Time after which, next entry would be posted : ' + str(
+        #     self.timeinMilliSeconds / self.conversationToMinFactor) + " minutes")
         self.trackerId = uuid.uuid4()
         print(' Current time is :: ' + strftime("%Y-%m-%d %H:%M:%S", localtime()))
         print(" look for :: " + str(self.trackerId) + " To track the entry ")
