@@ -92,7 +92,7 @@ class HelpMeTrack(QtGui.QWidget):
         gridLayout.addWidget(self.status_label, 0, 0, 1, 3)
         gridLayout.addWidget(self.issueIdBox, 1, 0)
         gridLayout.addWidget(self.issue_btn, 1, 1)
-        # gridLayout.addWidget(self.settings_btn, 1, 2)
+        gridLayout.addWidget(self.settings_btn, 1, 2)
         gridLayout.addWidget(self.issue_subject_label, 2, 0, 1, 3)
         gridLayout.addWidget(activity_label, 3, 0)
         gridLayout.addWidget(self.activity_combobox, 3, 1, 1, 2)

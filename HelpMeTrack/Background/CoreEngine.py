@@ -52,7 +52,7 @@ class CoreEngine(object):
 
     def postScreenShotTimer(self, screenShotPixMap):
         self.screenShotPixMap = screenShotPixMap
-        self.partialFileName = strftime("_%Y%m%d_%H-%M-%S", gmtime())
+        self.partialFileName = "_" + str(self.issueId)+strftime("_%Y%m%d_%H-%M-%S", gmtime())
         # print(" kicking of threads for : "+ self.partialFileName )
         print(" threads are starting for tracking id :: "+ str(self.trackerId))
         if (self.currentUser is None):
