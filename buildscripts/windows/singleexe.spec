@@ -1,10 +1,10 @@
 # -*- mode: python -*-
-a = Analysis(['.\\tkinter_main.py'],
+a = Analysis(['..\\..\main.py'],
              pathex=['M:\\projects\\rm.helpmetrack'],
              hiddenimports=[],
              hookspath=None,
              runtime_hooks=None)
-a.datas += [('redmine_fluid_icon.gif','redmine_fluid_icon.gif','DATA')]
+a.datas += [('redmine_fluid_icon.gif','..\\..\\HelpMeTrack\\Resources\\redmine_fluid_icon.gif','DATA')]
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
@@ -12,8 +12,8 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           name='RmHelpMeTrack.exe',
-          icon='appicon.ico',
+          icon='..\\..\\HelpMeTrack\\Resources\\appicon.ico',
           debug=False,
           strip=None,
           upx=True,
-          console=False , version='file_version_info.txt')
+          console=False , version='..\\file_version_info.txt')

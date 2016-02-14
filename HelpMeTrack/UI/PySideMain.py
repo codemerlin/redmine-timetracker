@@ -29,8 +29,6 @@ class HelpMeTrack(QtGui.QWidget):
         self.issue_subject_label = QtGui.QLabel()
         activity_label = QtGui.QLabel("Activity :")
         self.activity_combobox = QtGui.QComboBox()
-        time_in_min_label = QtGui.QLabel("Time in Min :")
-        self.time_in_min_box = QtGui.QLineEdit()
         comments_label = QtGui.QLabel("Comments :")
         self.comments_box = QtGui.QTextEdit()
         self.screenShotLabel = QtGui.QLabel()
@@ -39,8 +37,7 @@ class HelpMeTrack(QtGui.QWidget):
         self.screenShotLabel.setPixmap(self.screenShotPixMap.scaled(
             self.screenShotLabel.size(), QtCore.Qt.KeepAspectRatio,
             QtCore.Qt.SmoothTransformation))
-        self.configureLayout(activity_label, comments_label,
-                             time_in_min_label)
+        self.configureLayout(activity_label, comments_label)
         self.attach_events()
         self.setFixedSize(410, 510)
         self.conversationToMinFactor = 60000
@@ -67,8 +64,7 @@ class HelpMeTrack(QtGui.QWidget):
                 self.settings_file_error()
             return settings
         if (settings['api_key'] == '' or
-                    settings['server_url'] == '' or
-                    settings['time_in_minutes'] == ''):
+                    settings['server_url'] == ''):
             if show_error:
                 self.settings_file_error()
             return settings
@@ -90,19 +86,16 @@ class HelpMeTrack(QtGui.QWidget):
         return url is not None and regex.search(url)
 
     # region UI Functions
-    def configureLayout(self, activity_label, comments_label,
-                        time_in_min_label):
+    def configureLayout(self, activity_label, comments_label):
         # Prepare and configure GridLayout
         gridLayout = QtGui.QGridLayout()
         gridLayout.addWidget(self.status_label, 0, 0, 1, 3)
         gridLayout.addWidget(self.issueIdBox, 1, 0)
         gridLayout.addWidget(self.issue_btn, 1, 1)
-        gridLayout.addWidget(self.settings_btn, 1, 2)
+        # gridLayout.addWidget(self.settings_btn, 1, 2)
         gridLayout.addWidget(self.issue_subject_label, 2, 0, 1, 3)
         gridLayout.addWidget(activity_label, 3, 0)
         gridLayout.addWidget(self.activity_combobox, 3, 1, 1, 2)
-        # gridLayout.addWidget(time_in_min_label, 4, 0)
-        # gridLayout.addWidget(self.time_in_min_box, 4, 1, 1, 2)
         gridLayout.addWidget(comments_label, 4, 0, 1, 3)
         # gridLayout.addWidget(comments_label, 5, 0, 1, 3)
         gridLayout.addWidget(self.comments_box, 5, 0, 1, 3)
@@ -164,8 +157,6 @@ class HelpMeTrack(QtGui.QWidget):
     def reset_from(self):
         settings = self.read_settings(show_error=False)
         if settings is not None:
-            self.timerInMilliSecond = settings['time_in_minutes'] * 60000
-
             self.redmineClient = RedMineClient(settings['server_url'],
                                                settings['api_key'])
             self.getActivities()
@@ -179,6 +170,11 @@ class HelpMeTrack(QtGui.QWidget):
             # clearMsg = QtCore.Signal()
 
     def issue_btn_click(self):
+        if (self.issue_btn.text() == "Edit"):
+            self.stopTimers()
+            self.issueIdBox.setEnabled(True)
+            return
+
         try:
             is_valid = self.validate_issue_id(self.issueIdBox.text())
             if not is_valid:
@@ -199,6 +195,10 @@ class HelpMeTrack(QtGui.QWidget):
         if not is_issue_id_valid:
             self.set_error_msg("Issue ID has to be integer")
         return is_issue_id_valid
+
+    def stopTimers(self):
+        if (self.coreEngine is not None):
+            self.coreEngine.stop()
 
     def postIssueFound(self, issue):
         try:
@@ -235,13 +235,13 @@ class HelpMeTrack(QtGui.QWidget):
         return self.comments_box.toPlainText()
 
     def collectTimerInterval(self):
-        return randint(1,10) * self.conversationToMinFactor
-       # if self.startingTimer:
-       #     self.startTimerInterval =randint(1,5)
-       #     return self.startTimerInterval * 6000
-       #  # return randint(1,10) * 6000
-       # else
-       #  return (self.startTimerInterval1 * 6000
+        return randint(1, 10) * self.conversationToMinFactor
+        # if self.startingTimer:
+        #     self.startTimerInterval =randint(1,5)
+        #     return self.startTimerInterval * 6000
+        #  # return randint(1,10) * 6000
+        # else
+        #  return (self.startTimerInterval1 * 6000
 
     def getActivities(self):
         # self.activity_thread.__init__(
