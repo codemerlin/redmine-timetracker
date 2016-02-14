@@ -1,6 +1,7 @@
 import unittest
 
-from RedMineClient import *
+from HelpMeTrack.Shared.RedMineClient import \
+    RedMineClient,TimeEntry
 
 
 class RedMineClientTests(unittest.TestCase):
@@ -23,7 +24,7 @@ class RedMineClientTests(unittest.TestCase):
 
     def test_getActivites(self):
         print("trying to get activities")
-        activities = self.client.get_activities()
+        activities = self.client.getActivities()
         self.assertIsNotNone(activities)
         print(list(map(lambda x: x["name"].encode('ascii', 'ignore'), activities)))
         print(list(filter(lambda x: 'is_default' in x, activities))[0]["name"])
@@ -32,5 +33,6 @@ class RedMineClientTests(unittest.TestCase):
 
     def test_Can_Create_Time_Entry(self):
         print("trying to Post an entry")
-        result = self.client.post_time_entry(TimeEntry(activity_id=9, issue_id=1, comments="asfads", time_in_minutes="2"))
+        result = self.client.post_time_entry(
+            TimeEntry(activity_id=9, issue_id=1, comments="asfads", time_in_minutes="2"))
         assert result

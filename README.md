@@ -2,21 +2,28 @@
 
 *Runs on Python 2.7* 
 
-### To run the project
+### To execute from the source project
 
+assumption is that the project is cloned in M:\projects\rm.helpmetrack
+
+You would need to install https://www.microsoft.com/en-us/download/details.aspx?id=44266 on windows before running following commands
 
 ```
 pip install requests
 
 pip install pyinstaller
 
-python tkinter_main.py
+pip install paramiko
+
+python main.py
 
 ```
 
 ### to build, on windows 
 
 ```
+cd buildscripts\windows\
+
 .\single_build.bat
 
 ```
@@ -29,14 +36,10 @@ python tkinter_main.py
 ```
 
 
-### Work is in progress for the pyside version to run that 
-
-```
-
-pip install pyside
-
-python pyside_main.py
-
-```
 
 
+# Code Details
+All the background work is broken into threads/timers, CoreEngine.py is the file that controls all of that.
+PySideMain.py is the file that has all the ui code.
+all the redmine operaions are in RedMineClient.py.
+main.py is the starting point though
