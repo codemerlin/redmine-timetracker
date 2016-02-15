@@ -37,7 +37,7 @@ class HelpMeTrack(QtGui.QWidget):
         self.configureLayout(activity_label, comments_label)
         self.attach_events()
         self.setFixedSize(410, 510)
-        self.conversationToMinFactor = 6000
+        self.conversationToMinFactor = 60000
 
         # self.activity_thread = threading.Thread()
         settings = self.read_settings(show_error=False)
@@ -50,7 +50,7 @@ class HelpMeTrack(QtGui.QWidget):
     def createClockUI(self):
         self.clockValue = 0
         self.clockTimer = QtCore.QTimer()
-        self.clockTimer.setInterval(6000)
+        self.clockTimer.setInterval(self.conversationToMinFactor)
         self.clockTimer.timeout.connect(self.updateClockValue)
         self.timerLabel = QtGui.QLabel()
         self.timerLabel.setStyleSheet(
