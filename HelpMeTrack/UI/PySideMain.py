@@ -32,12 +32,12 @@ class HelpMeTrack(QtGui.QWidget):
         self.activity_combobox = QtGui.QComboBox()
         comments_label = QtGui.QLabel("Comments :")
         self.comments_box = QtGui.QTextEdit()
+        self.conversationToMinFactor = 60000
         self.createClockUI()
         self.setWhiteImage()
         self.configureLayout(activity_label, comments_label)
         self.attach_events()
         self.setFixedSize(410, 510)
-        self.conversationToMinFactor = 60000
 
         # self.activity_thread = threading.Thread()
         settings = self.read_settings(show_error=False)
