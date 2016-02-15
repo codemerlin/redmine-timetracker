@@ -15,6 +15,8 @@ pip install pyinstaller
 
 pip install paramiko
 
+pip install PySide
+
 python main.py
 
 ```
